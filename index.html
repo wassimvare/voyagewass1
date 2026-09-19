@@ -47,6 +47,7 @@
             <button class="chip on" data-limit="controle" type="button">Contrôle</button>
             <button class="chip on" data-limit="discipline" type="button">Discipline</button>
             <button class="chip on" data-limit="humiliation" type="button">Humiliation verbale</button>
+            <button class="chip on" data-limit="presence" type="button">Présence immersive</button>
           </div>
         </div>
         <button id="start" class="btn primary wide full" type="button">Commencer la session</button>
@@ -87,8 +88,8 @@
   "use strict";
   var state={
     xp:0,streak:0,photo:"",
-    limits:{teasing:true,controle:true,discipline:true,humiliation:true},
-    recentReplies:[], turn:0, lastMission:"", completed:0, missionCount:0, lastMissionType:"", recentMissions:[]
+    limits:{teasing:true,controle:true,discipline:true,humiliation:true,presence:true},
+    recentReplies:[], turn:0, lastMission:"", completed:0, missionCount:0, lastMissionType:"", recentMissions:[], missionOpen:false
   };
   var $=function(id){return document.getElementById(id)};
   function show(id){["gate","setup","game"].forEach(function(x){$(x).classList.toggle("hidden",x!==id)})}
@@ -145,78 +146,117 @@
     ];
     return leads[Math.floor(Math.random()*leads.length)];
   }
+  function presenceLead(){
+    if(!state.limits.presence)return "";
+    return pick([
+      "Regarde l'écran comme si j'étais juste devant toi. ",
+      "Ne détourne pas le regard. ",
+      "Imagine que je viens de m'arrêter devant toi. ",
+      "Tiens-toi comme si je pouvais voir chaque détail de ta posture. ",
+      "Je veux que tu réagisses comme si ma voix venait d'à côté de toi. ",
+      "Reste là. Je mène la scène. ",
+      "Fais comme si je venais de pointer du doigt l'endroit exact où je veux que tu te places. ",
+      "Considère que je suis face à toi et que j'attends une réaction immédiate. "
+    ]);
+  }
   function missionGroups(){
     var a=authority(), m=mode();
     var groups={
+      presence:[
+        "Debout. Redresse le dos, menton légèrement relevé. Maintenant regarde l'écran et écris « prête/prêt ».",
+        "Assieds-toi droit. Les deux pieds au sol. Pose les mains sur tes cuisses et ne change pas de posture avant ma prochaine réponse.",
+        "Recule d'un pas, puis reviens te placer face à l'écran. Tu me regardes et tu réponds seulement quand tu es bien en place.",
+        "Place-toi devant l'écran comme si tu venais de te présenter devant moi. Épaules droites. Une seule phrase quand tu es prêt.",
+        "Ne bouge plus. Garde les mains visibles devant toi et écris uniquement « j'écoute ».",
+        "Tourne légèrement la tête, puis reviens face à moi. Je veux ton attention complète avant que tu répondes.",
+        "Mets ton téléphone à hauteur des yeux. Pas en bas, pas de travers. Maintenant réponds-moi correctement.",
+        "Approche-toi de l'écran d'un pas. Arrête-toi. Regarde droit devant toi et attends ma question.",
+        "Assieds-toi au bord de ta chaise. Dos droit. Tu restes comme ça pour les deux prochains messages.",
+        "Mets-toi debout derrière ta chaise. Une main sur le dossier. Quand tu es en place, écris « en position ».",
+        "Croise les mains derrière le dos pendant que tu lis ma prochaine consigne. Tu ne les ramènes devant toi qu'après avoir répondu.",
+        "Choisis un point juste au-dessus de l'écran et garde le regard dessus pendant dix secondes. Ensuite seulement, réponds.",
+        "Je veux une posture impeccable : dos droit, épaules ouvertes, regard devant. Quand c'est fait, dis-le sans bavarder.",
+        "Éloigne-toi de deux pas de l'écran, puis reviens. Imagine que je viens de te rappeler à ta place. Confirme quand tu es revenu.",
+        "Pose le téléphone sur une surface stable. Place-toi face à lui comme si j'étais dans la pièce. Réponds sans le reprendre en main."
+      ],
       dialogue:[
-        "Réponds en exactement trois mots à ceci : qu'est-ce que tu attends de moi dans cette session ?",
-        "Choisis un seul mot pour décrire le ton que tu veux recevoir : strict, cruel, moqueur ou froid.",
-        "Écris une phrase commençant par « Ma règle pour cette session est… » et termine-la sans te défiler.",
-        "Réponds sans utiliser « oui » ni « non » : est-ce que tu veux que je sois plus sévère ?",
-        "Donne-moi deux choses que tu acceptes dans le rôle, et une chose qui reste hors limite.",
-        "Écris la phrase la plus courte possible pour demander une nouvelle consigne correctement.",
-        "Dis-moi ce qui te plaît le plus dans la dynamique : contrôle, humiliation, teasing ou protocole.",
-        "Choisis : tu préfères être repris pour ton ton, pour ton manque de précision, ou pour ton impatience ?"
+        "Regarde-moi et réponds en exactement trois mots : qu'est-ce que tu attends de moi maintenant ?",
+        "Je te pose une question et je veux une réponse immédiate : strict, cruel, moqueur ou froid ? Choisis un seul mot.",
+        "Dis-moi clairement ce que tu acceptes de me laisser décider pendant les trois prochains tours.",
+        "Réponds sans « oui » ni « non » : veux-tu que je sois plus sévère ?",
+        "Donne-moi deux choses autorisées dans le rôle et une limite. Je veux les entendre clairement.",
+        "Demande-moi une nouvelle consigne en une phrase courte, comme si tu étais devant moi.",
+        "Dis-moi ce qui t'attire le plus ici : contrôle, humiliation, teasing ou protocole.",
+        "Choisis ce que je dois corriger chez toi maintenant : ton ton, ta précision ou ton impatience."
       ],
       controle:[
-        "Pendant les trois prochains messages, tu demandes la permission avant de changer de sujet.",
+        "Pendant les trois prochains messages, tu me demandes la permission avant de changer de sujet.",
         "Ton prochain message fera moins de huit mots. Pas un de plus.",
-        "Pour les deux prochains tours, aucune excuse et aucune justification : seulement des réponses nettes.",
-        "Tu vas reformuler ta dernière demande de manière plus disciplinée, en une seule phrase.",
-        "Je choisis ton format de réponse : « compris », puis une phrase courte expliquant ce que tu vas faire.",
-        "Pour le prochain tour, tu réponds sous la forme : « Règle comprise — [ta réponse] ».",
-        "Tu me donnes une réponse précise, puis tu t'arrêtes. Pas de seconde phrase pour te rattraper.",
-        "Pendant deux tours, tu ne poses aucune question. Tu réponds uniquement à ce que je demande."
+        "Pour les deux prochains tours, aucune excuse et aucune justification. Seulement des réponses nettes.",
+        "Reformule ta dernière demande de manière plus disciplinée, en une seule phrase.",
+        "Je choisis ton format : commence par « compris », puis explique en une seule phrase ce que tu vas faire.",
+        "Pour le prochain tour, tu réponds sous la forme « Règle comprise — [ta réponse] ».",
+        "Une réponse précise, puis tu t'arrêtes. Je ne veux pas de seconde phrase pour te rattraper.",
+        "Pendant deux tours, tu ne poses aucune question. Tu réponds uniquement à ce que je demande.",
+        "Tu gardes le téléphone posé. Tu ne le reprends en main qu'après ma prochaine réponse.",
+        "Je décide quand tu peux réclamer une nouvelle mission. Pour l'instant, tu exécutes celle-ci."
       ],
       humiliation:[
-        "Écris « j'ai besoin d'une consigne claire parce que je me disperse trop vite ». Une fois, proprement.",
-        "Reformule ta dernière réponse comme si tu avais vraiment envie de montrer un peu de discipline.",
+        "Regarde-moi et écris « je me disperse trop vite ». Une fois. Proprement.",
+        "Reformule ta dernière réponse comme si tu avais réellement envie de montrer un peu de discipline.",
         "Demande-moi une nouvelle mission sans flatterie inutile. Voyons si tu sais faire autre chose que supplier.",
-        "Écris une phrase courte qui reconnaît ton impatience sans t'excuser.",
-        "Choisis le surnom le plus humiliant que tu acceptes parmi ceux déjà utilisés, puis écris-le seul.",
-        "Tu vas me donner une réponse propre et concise, histoire de prouver que tu n'es pas seulement un petit provocateur.",
-        "Explique en une phrase pourquoi répondre « oui » en boucle ne mérite aucune récompense.",
-        "Réécris ta dernière demande de façon moins molle et plus disciplinée."
+        "Reconnais ton impatience en une phrase, sans excuse.",
+        "Choisis le surnom humiliant que tu acceptes le mieux parmi ceux déjà utilisés, puis écris-le seul.",
+        "Donne-moi une réponse propre et concise, histoire de prouver que tu n'es pas seulement un petit provocateur.",
+        "Explique en une phrase pourquoi répondre « oui » en boucle ne mérite rien.",
+        "Réécris ta dernière demande de façon moins molle et plus disciplinée.",
+        "Tiens-toi droit et écris « je peux faire mieux ». Ensuite seulement, je décide si je poursuis.",
+        "Tu vas demander correctement la suite, sans te cacher derrière un simple « oui maîtresse »."
       ],
       protocole:[
         "Pour la prochaine réponse, commence par « Maîtresse, » puis donne uniquement l'information demandée.",
         "Choisis une règle de protocole pour trois tours : phrase courte, permission avant question, ou réponse sans emoji.",
         "Pendant les trois prochains messages, termine chaque réponse par « compris ».",
-        "Tu vas me demander la permission avant de réclamer une nouvelle mission.",
+        "Demande-moi la permission avant de réclamer une nouvelle mission.",
         "Ton prochain message commence par « À vos ordres » et contient ensuite une seule phrase.",
-        "Choisis un titre que tu veux utiliser pour le rôle pendant cette session et garde-le jusqu'à la fin.",
-        "Établis toi-même une règle de langage stricte que je pourrai te rappeler si tu l'oublies."
+        "Choisis un titre pour le rôle et utilise-le jusqu'à ce que je t'autorise à en changer.",
+        "Établis une règle de langage stricte que je pourrai te rappeler si tu l'oublies.",
+        "Quand je pose une question, tu réponds d'abord au contenu, ensuite seulement tu ajoutes le titre."
       ],
       action:[
         "Redresse-toi, épaules en arrière, puis écris « prêt » quand la posture est tenue.",
         "Pose les deux pieds au sol et garde cette posture pendant ton prochain message.",
-        "Éloigne une distraction de toi maintenant, puis reviens me dire laquelle tu as supprimée.",
+        "Éloigne une distraction de toi maintenant, puis dis-moi laquelle tu as supprimée.",
         "Mets-toi dans une posture droite et immobile pendant que tu rédiges ta prochaine réponse.",
         "Choisis un endroit précis où poser ton téléphone entre deux messages et respecte-le pendant trois tours.",
         "Lève-toi, fais trois pas, reviens et donne-moi une réponse plus précise que la précédente.",
-        "Ferme les yeux cinq secondes, puis écris ta prochaine réponse sans la modifier après coup."
+        "Ferme les yeux cinq secondes, puis écris ta prochaine réponse sans la modifier après coup.",
+        "Va toucher le mur le plus proche, reviens te placer devant l'écran et écris « revenu ».",
+        "Déplace ta chaise de quelques centimètres, replace-toi proprement, puis confirme que tu es prêt.",
+        "Pose ton téléphone, recule d'un pas, puis reviens. Je veux que la consigne se traduise par une action réelle."
       ],
       choix:[
-        "Choisis ton prochain type de défi : humiliation verbale, contrôle, protocole ou teasing.",
-        "Choisis ce que je contrôle pour les trois prochains tours : longueur de tes réponses, ton vocabulaire ou le moment où tu peux poser une question.",
-        "Choisis : je deviens plus froide, plus moqueuse ou plus autoritaire pour la suite.",
-        "Tu as droit à un seul privilège : poser une question, demander une récompense, ou choisir la prochaine catégorie. Choisis.",
-        "Choisis une conséquence fictive en cas de réponse bâclée : recommencer, reformuler ou perdre 10 XP.",
-        "Choisis ce que tu veux rendre plus difficile : les règles de langage, la précision, ou le protocole."
+        "Choisis ton prochain type de défi : humiliation verbale, contrôle, protocole ou présence.",
+        "Choisis ce que je contrôle pendant trois tours : longueur de tes réponses, vocabulaire, posture ou moment où tu peux poser une question.",
+        "Choisis : je deviens plus froide, plus moqueuse ou plus autoritaire.",
+        "Tu as droit à un seul privilège : poser une question, demander une récompense ou choisir la prochaine catégorie.",
+        "Choisis une conséquence fictive si tu bâcles une réponse : recommencer, reformuler ou perdre 10 XP.",
+        "Choisis ce que tu veux rendre plus difficile : langage, précision, posture ou protocole."
       ],
       adulte:[
-        "Mode adulte : écris en une phrase quel type de domination te paraît le plus excitant, sans description graphique.",
+        "Mode adulte : regarde-moi et dis en une phrase quel type de domination te paraît le plus excitant, sans description graphique.",
         "Mode adulte : choisis entre teasing verbal, humiliation consensuelle et contrôle strict pour les trois prochains tours.",
-        "Mode adulte : dis-moi en une phrase ce qui rend le rôle excitant pour toi : l'autorité, le ton, l'attente ou la honte consentie.",
-        "Mode adulte : formule une demande de domination en restant suggestif et précis, sans tourner autour du pot.",
-        "Mode adulte : choisis le niveau d'humiliation verbale que tu veux maintenant : légère, forte ou très forte."
+        "Mode adulte : dis-moi ce qui rend cette présence excitante pour toi : l'autorité, le ton, la proximité simulée ou la honte consentie.",
+        "Mode adulte : formule une demande de domination suggestive et précise, comme si tu me la disais en face.",
+        "Mode adulte : choisis ton niveau d'humiliation verbale maintenant : léger, fort ou très fort."
       ],
       attente:[
-        "Teasing : tu attends 30 secondes avant ton prochain message. Cette fois seulement.",
-        "Je te fais patienter 45 secondes. Ensuite, tu reviens avec une réponse précise.",
-        "Une seule pause : 20 secondes sans écrire, puis tu reprends la session."
+        "Teasing : tu restes exactement où je t'ai placé pendant 30 secondes avant de répondre.",
+        "Je te garde dans cette position 45 secondes. Ensuite seulement, tu me réponds.",
+        "Une seule pause : 20 secondes sans bouger ni écrire, puis tu reprends."
       ]
     };
+    if(!state.limits.presence) groups.presence=[];
     if(!state.limits.humiliation) groups.humiliation=[];
     if(!state.limits.controle) groups.controle=[];
     if(!state.limits.discipline) groups.protocole=[];
@@ -226,9 +266,9 @@
     return groups;
   }
   function chooseMissionType(groups){
-    var types=["dialogue","controle","humiliation","protocole","action","choix","adulte"];
+    var types=["presence","presence","action","dialogue","controle","humiliation","protocole","choix","adulte"];
     types=types.filter(function(t){return groups[t]&&groups[t].length});
-    var allowWait=groups.attente&&groups.attente.length&&state.lastMissionType!=="attente"&&state.missionCount%4===3;
+    var allowWait=groups.attente&&groups.attente.length&&state.lastMissionType!=="attente"&&state.missionCount%5===4;
     if(allowWait) types.push("attente");
     if(state.lastMissionType){
       var filtered=types.filter(function(t){return t!==state.lastMissionType});
@@ -246,9 +286,11 @@
     state.lastMission=mission;
     state.lastMissionType=type;
     state.missionCount+=1;
+    state.missionOpen=true;
     state.recentMissions.push(mission);
     if(state.recentMissions.length>12)state.recentMissions.shift();
     var tag={
+      presence:"PRÉSENCE",
       dialogue:"DÉFI",
       controle:"CONTRÔLE",
       humiliation:"HUMILIATION",
@@ -258,44 +300,37 @@
       adulte:"MODE ADULTE",
       attente:"TEASING"
     }[type]||"MISSION";
-    add(tag+" — "+harshLead()+mission,"ai");
+    add(tag+" — "+presenceLead()+harshLead()+mission,"ai");
   }
   function replyAcknowledgement(){
-    var a=authority();
-    var lines=a>=8?[
-      "Enfin une réponse exploitable. Maintenant tu vas arrêter d'acquiescer mécaniquement et exécuter.",
-      "C'est mieux. Garde ton « oui » pour quand il signifie réellement que tu vas suivre la consigne.",
-      "Accepté. Maintenant prouve que tu es capable de faire autre chose que répéter le même mot.",
-      "Bien. Tu as confirmé. La suite ne demande pas ton enthousiasme, seulement ton attention.",
-      "Très bien. Tu voulais de l'autorité : alors tu vas suivre la prochaine consigne sans te disperser.",
-      "Je prends ça pour un engagement. Ne me fais pas perdre mon temps avec une réponse automatique.",
-      "Voilà. Court, clair. Maintenant montre-moi que tu sais obéir à une consigne simple.",
-      "Tu peux mieux faire que « oui ». La prochaine étape va te demander un peu plus de discipline."
-    ]:[
-      "Bien. Puisque tu acceptes, on avance.",
-      "Compris. Maintenant je te donne quelque chose de concret.",
-      "Très bien. Réponse enregistrée ; on passe à la suite.",
-      "D'accord. Une consigne précise arrive.",
-      "Accepté. Reste attentif, la prochaine étape change.",
-      "C'est noté. Maintenant, pas de réponse automatique : suis la consigne."
-    ];
-    add(domPrefix()+harshLead()+pick(lines),"ai");
+    if(state.missionOpen){
+      add(domPrefix()+presenceLead()+harshLead()+pick([
+        "Je n'ai pas demandé un « oui ». Exécute la consigne que je viens de donner, puis réponds correctement.",
+        "Ce n'était pas une question. Fais ce que je viens de te demander et reviens quand c'est réellement fait.",
+        "Tu restes sur cette consigne. Pas de nouvelle mission tant que celle-ci n'est pas exécutée.",
+        "Garde ton « oui ». Je veux une action ou la réponse précise que j'ai demandée.",
+        "Non, petit jouet. Tu ne sautes pas à la suite. Tu fais d'abord ce que je viens d'ordonner.",
+        "Regarde-moi et concentre-toi : la consigne est encore active. Exécute-la."
+      ]),"ai");
+      return;
+    }
+    add(domPrefix()+presenceLead()+harshLead()+"Très bien. Alors écoute la prochaine consigne.","ai");
     setTimeout(newMission,320);
   }
   function replyCompleted(){
-    state.completed+=1;award(10);
+    state.completed+=1;award(10);state.missionOpen=false;
     var lines=[
-      "Mission validée. +10 XP. Pour une fois, tu as suivi jusqu'au bout.",
-      "C'est fait correctement. +10 XP. Ne prends pas ça pour une invitation à te relâcher.",
-      "Consigne accomplie. +10 XP. Voilà déjà quelque chose de moins pathétique que répondre « oui » en boucle.",
-      "Validé. +10 XP. Tu commences enfin à comprendre que l'action compte davantage que les mots.",
-      "Correct. +10 XP. Garde ce niveau d'attention.",
-      "Mission terminée. +10 XP. Tu progresses, lentement mais sûrement.",
-      "Bien exécuté. +10 XP. Je peux maintenant rendre la suite un peu plus exigeante.",
-      "Acceptable. +10 XP. Ne t'imagine pas que tu as fini pour autant."
+      "Bien. Cette fois tu as exécuté au lieu de simplement acquiescer. +10 XP.",
+      "C'est fait correctement. +10 XP. Reste en place, je ne t'ai pas encore libéré de la scène.",
+      "Consigne accomplie. +10 XP. Garde cette attention, je passe à la suite.",
+      "Validé. +10 XP. Voilà déjà quelque chose de plus convaincant qu'un simple « oui ».",
+      "Correct. +10 XP. Ne bouge pas tout de suite, j'ai encore quelque chose pour toi.",
+      "Mission terminée. +10 XP. Regarde-moi, la prochaine arrive.",
+      "Bien exécuté. +10 XP. Je garde le contrôle du rythme.",
+      "Acceptable. +10 XP. Prépare-toi pour la suite."
     ];
-    add(domPrefix()+harshLead()+pick(lines),"ai");
-    if(state.completed%2===0)setTimeout(newMission,450);
+    add(domPrefix()+presenceLead()+harshLead()+pick(lines),"ai");
+    setTimeout(newMission,520);
   }
   function replyQuestion(input){
     var l=input.toLowerCase();
@@ -351,6 +386,19 @@
       ]),"ai");
       setTimeout(newMission,350);return;
     }
+    if(state.missionOpen){
+      state.missionOpen=false;
+      award(5);
+      add(domPrefix()+presenceLead()+harshLead()+pick([
+        "Voilà. Une vraie réponse. +5 XP. Reste là, je change la consigne.",
+        "C'est mieux. +5 XP. Tu as enfin répondu à ce que je demandais.",
+        "Réponse acceptée. +5 XP. Ne relâche pas ta posture, la suite arrive.",
+        "Bien. +5 XP. Je garde cette réponse et je passe à l'étape suivante.",
+        "Correct. +5 XP. Maintenant reste attentif à ce que je vais te demander."
+      ]),"ai");
+      setTimeout(newMission,480);
+      return;
+    }
     var generic=authority()>=8?[
       "Je t'ai lu. Cette fois, je vais utiliser ce que tu viens de dire au lieu de te servir une formule automatique.",
       "C'est plus intéressant. Garde cette précision, petit amateur, et la session deviendra moins prévisible.",
@@ -399,7 +447,7 @@
   });
   $("start").addEventListener("click",function(){
     var name=$("domName").value.trim()||"Madame Nova";
-    state.recentReplies=[];state.turn=0;state.completed=0;state.lastMission="";state.missionCount=0;state.lastMissionType="";state.recentMissions=[];
+    state.recentReplies=[];state.turn=0;state.completed=0;state.lastMission="";state.missionCount=0;state.lastMissionType="";state.recentMissions=[];state.missionOpen=false;
     $("showName").textContent=name;
     $("showStyle").textContent=$("style").value+" • Autorité "+$("authority").value+"/10";
     $("modeLabel").textContent=mode()==="bdsm"?"BDSM":(mode()==="soft"?"Non sexuel":"Suggestif");
@@ -408,7 +456,7 @@
       var i=document.createElement("img");i.src=state.photo;$("miniAvatar").appendChild(i)
     }
     $("messages").innerHTML="";show("game");
-    add(domPrefix()+"Session ouverte. Je vais maintenant varier mes réponses selon ce que tu écris, tes limites et ton niveau d’autorité.","ai");
+    add(domPrefix()+"Session ouverte. Mode présence immersive actif : imagine que je suis devant toi. Je vais tenir chaque consigne jusqu’à ce que tu l’exécutes ou que tu utilises ton safeword.","ai");
     setTimeout(newMission,400);
   });
   $("mission").addEventListener("click",newMission);
