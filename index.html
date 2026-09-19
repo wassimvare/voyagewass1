@@ -36,7 +36,7 @@
       </div>
       <div class="fields">
         <label>Nom<input id="domName" value="Madame Nova" maxlength="30"></label>
-        <label>Style<select id="style"><option>Ferme</option><option>Froide</option><option>Élégante</option><option>Joueuse</option></select></label>
+        <label>Style<select id="style"><option>Ferme</option><option>Froide</option><option>Cruelle</option><option>Humiliante</option><option>Élégante</option><option>Joueuse</option></select></label>
         <label class="full">Niveau d’autorité <span id="authorityValue" class="pill">7/10</span><div class="rangeRow"><input id="authority" type="range" min="1" max="10" value="7"></div></label>
         <label>Safeword<input id="safe" value="ROUGE" maxlength="20"></label>
         <label>Mode<select id="adultMode"><option value="suggestif">Adulte suggestif</option><option value="bdsm">BDSM consensuel</option><option value="soft">Non sexuel</option></select></label>
@@ -46,7 +46,7 @@
             <button class="chip on" data-limit="teasing" type="button">Teasing</button>
             <button class="chip on" data-limit="controle" type="button">Contrôle</button>
             <button class="chip on" data-limit="discipline" type="button">Discipline</button>
-            <button class="chip" data-limit="humiliation" type="button">Humiliation</button>
+            <button class="chip on" data-limit="humiliation" type="button">Humiliation verbale</button>
           </div>
         </div>
         <button id="start" class="btn primary wide full" type="button">Commencer la session</button>
@@ -87,7 +87,7 @@
   "use strict";
   var state={
     xp:0,streak:0,photo:"",
-    limits:{teasing:true,controle:true,discipline:true,humiliation:false},
+    limits:{teasing:true,controle:true,discipline:true,humiliation:true},
     recentReplies:[], turn:0, lastMission:"", completed:0
   };
   var $=function(id){return document.getElementById(id)};
@@ -118,34 +118,98 @@
     $("xp").textContent=state.xp+" XP";$("streak").textContent=state.streak;
   }
   function consentPause(){
-    add(domPrefix()+"D'accord. Cette limite est respectée. On change de direction, sans justification nécessaire.","ai");
+    add(domPrefix()+"Très bien. Cette limite est respectée immédiatement. Tu n'as rien à justifier. Je change de direction.","ai");
     state.streak=0;$("streak").textContent=state.streak;
+  }
+  function harshWord(){
+    if(!state.limits.humiliation)return "";
+    var words=[
+      "petit insolent","petit jouet","docile créature","pauvre petit provocateur",
+      "élève indiscipliné","petit prétentieux","créature impatiente","petit effronté",
+      "jouet capricieux","petit rebelle","impertinent","petit amateur"
+    ];
+    return words[Math.floor(Math.random()*words.length)];
+  }
+  function harshLead(){
+    if(!state.limits.humiliation)return "";
+    var w=harshWord();
+    var leads=[
+      "Écoute bien, "+w+". ",
+      "Regarde-moi ça, "+w+". ",
+      "Tu vas apprendre à faire mieux, "+w+". ",
+      "Pas si vite, "+w+". ",
+      "Tu crois vraiment que ce sera aussi facile, "+w+" ? ",
+      "Essaie au moins d'être à la hauteur, "+w+". ",
+      "Quelle impatience, "+w+". ",
+      "Ne me fais pas répéter, "+w+". "
+    ];
+    return leads[Math.floor(Math.random()*leads.length)];
   }
   function missionPool(){
     var a=authority(), m=mode();
     var pool=[
-      "Pose ton téléphone pendant 30 secondes. Reviens seulement quand c’est fait.",
-      "Écris une seule phrase : ce que tu acceptes de me laisser décider pendant cette session.",
-      "Reste parfaitement silencieux pendant 60 secondes, puis écris « terminé ».",
-      "Relis ton prochain message avant de l’envoyer. Je veux une réponse nette, pas automatique.",
-      "Choisis une petite règle que tu acceptes de respecter jusqu’à la fin de cette session.",
-      "Attends 45 secondes avant ta prochaine réponse. Pas une seconde de moins."
+      "Pose ton téléphone pendant 30 secondes. Tu reviens uniquement quand le temps est écoulé.",
+      "Réponds en une seule phrase à la prochaine consigne. Pas de bavardage inutile.",
+      "Reste silencieux pendant 60 secondes, puis écris uniquement « terminé ».",
+      "Relis ton prochain message deux fois avant de l'envoyer. Je veux quelque chose de propre et précis.",
+      "Choisis une règle simple que tu acceptes de respecter jusqu'à la fin de cette session.",
+      "Attends 45 secondes avant ta prochaine réponse. Si tu réponds trop tôt, tu recommences.",
+      "Pendant deux messages, tu n'utilises que des réponses courtes et directes.",
+      "Écris exactement ce que tu acceptes de me laisser décider dans cette session, sans détour.",
+      "Tu vas rester immobile pendant une minute, puis revenir confirmer que tu as tenu jusqu'au bout.",
+      "Ne demande rien pendant 90 secondes. Tu attends que ce soit moi qui relance.",
+      "Pour ton prochain message, aucun emoji, aucune excuse, aucune justification. Seulement la réponse demandée.",
+      "Tu vas compter lentement jusqu'à 30 avant d'écrire quoi que ce soit.",
+      "Pendant la prochaine minute, tu gardes les mains loin du clavier et tu attends.",
+      "Tu vas me demander la permission avant de changer de sujet pendant les trois prochains messages.",
+      "Réponds à la prochaine question sans utiliser le mot « oui ». Je veux voir si tu sais faire mieux.",
+      "Écris une phrase qui montre que tu as compris que le safeword passe avant mon autorité."
     ];
     if(state.limits.teasing && m!=="soft"){
-      pool.push("Teasing : tu vas attendre 90 secondes avant de demander quoi que ce soit de plus.");
-      pool.push("Je te fais patienter. Pendant une minute, tu n’envoies aucun message, puis tu reviens me dire si tu as respecté la consigne.");
+      pool.push(
+        "Teasing : tu attends 90 secondes avant de demander la suite. Je décide quand le rythme accélère.",
+        "Teasing : tu n'obtiens rien de plus maintenant. Tu patientes une minute complète avant ton prochain message.",
+        "Je te laisse volontairement dans l'attente. Reviens seulement après 75 secondes.",
+        "Tu veux la suite trop vite. Alors tu vas attendre deux minutes sans rien réclamer.",
+        "Pas de récompense immédiate. Tu attends jusqu'à ce que je décide que tu as assez patienté."
+      );
     }
     if(state.limits.controle){
-      pool.push("Contrôle : pendant les deux prochains messages, réponds en une seule phrase, pas davantage.");
-      pool.push("Pour la prochaine consigne, tu me réponds seulement quand tu as réellement fini, pas avant.");
+      pool.push(
+        "Contrôle : les deux prochains messages feront moins de dix mots chacun.",
+        "Contrôle : tu n'envoies qu'un seul message à la fois et tu attends ma réponse avant le suivant.",
+        "Contrôle : tu me demandes la permission avant toute nouvelle demande pendant trois tours.",
+        "Contrôle : je choisis le rythme. Tu réponds seulement quand la consigne est terminée.",
+        "Contrôle : pendant deux minutes, aucune initiative. Tu suis simplement ce qui est demandé."
+      );
     }
     if(state.limits.discipline && a>=7){
-      pool.push("Discipline : corrige ta posture, attends 30 secondes et reviens avec « prête/prêt ».");
-      pool.push("Je veux de la précision : donne-moi une réponse courte, claire et sans détour à ma prochaine question.");
+      pool.push(
+        "Discipline : corrige ta posture, attends 30 secondes et reviens avec « prêt ».",
+        "Discipline : si ta prochaine réponse dépasse une phrase, tu recommences.",
+        "Discipline : tu vas faire exactement ce qui est demandé, ni plus ni moins.",
+        "Discipline : tu prends 20 secondes avant chaque réponse pendant les deux prochains tours.",
+        "Discipline : une consigne, une exécution, une confirmation. Pas de négociation inutile."
+      );
+    }
+    if(state.limits.humiliation){
+      pool.push(
+        "Humiliation : écris « j'ai répondu trop vite » si tu as encore essayé de précipiter la session.",
+        "Humiliation : tu vas me montrer que tu sais suivre une règle simple sans te disperser.",
+        "Humiliation : pas de grand discours. Une phrase nette, sinon tu recommences comme un petit amateur.",
+        "Humiliation : tu attends en silence. Ton impatience n'est pas une raison pour que j'accélère.",
+        "Humiliation : tu me demandes proprement une nouvelle consigne au lieu de réclamer n'importe comment.",
+        "Humiliation : prouve que tu peux être discipliné avant d'espérer une récompense."
+      );
     }
     if(m==="bdsm"){
-      pool.push("Je garde la dynamique BDSM dans les limites choisies : commence par une minute d’attente contrôlée, puis reviens écrire « fait ».");
-      pool.push("Tu m’as donné un cadre précis. Pour cette étape, obéis seulement à ceci : attends, respire calmement, puis confirme quand tu es prêt à continuer.");
+      pool.push(
+        "Cadre BDSM : tu me demandes la prochaine consigne clairement, puis tu attends ma réponse sans relancer.",
+        "Cadre BDSM : le pouvoir reste dans les limites convenues. Pour l'instant, tu patientes et tu suis le rythme.",
+        "Cadre BDSM : une minute d'attente contrôlée, puis une confirmation courte. Rien de plus.",
+        "Cadre BDSM : tu gardes le rôle que tu as choisi et tu attends mon autorisation avant de réclamer la suite.",
+        "Cadre BDSM : je choisis la prochaine étape. Toi, tu me confirmes seulement quand tu es prêt à continuer."
+      );
     }
     return pool;
   }
@@ -157,52 +221,64 @@
       if(alternatives.length)mission=alternatives[Math.floor(Math.random()*alternatives.length)];
     }
     state.lastMission=mission;
-    add("MISSION — "+mission,"ai");
+    add("MISSION — "+harshLead()+mission,"ai");
   }
   function replyAcknowledgement(){
     var a=authority();
     var lines=a>=8?[
-      "Voilà une réponse qui me convient. Maintenant, écoute bien : je passe à la suite.",
-      "Mieux. Je ne veux pas que tu répètes « oui » mécaniquement ; je veux que tu suives la prochaine consigne.",
-      "Accepté. Je prends ça comme un engagement pour l’étape suivante.",
-      "Bien. Tu as confirmé. À présent, montre-le par l’action plutôt que par un autre « oui »."
+      "Enfin une réponse exploitable. Maintenant tu vas arrêter d'acquiescer mécaniquement et exécuter.",
+      "C'est mieux. Garde ton « oui » pour quand il signifie réellement que tu vas suivre la consigne.",
+      "Accepté. Maintenant prouve que tu es capable de faire autre chose que répéter le même mot.",
+      "Bien. Tu as confirmé. La suite ne demande pas ton enthousiasme, seulement ton attention.",
+      "Très bien. Tu voulais de l'autorité : alors tu vas suivre la prochaine consigne sans te disperser.",
+      "Je prends ça pour un engagement. Ne me fais pas perdre mon temps avec une réponse automatique.",
+      "Voilà. Court, clair. Maintenant montre-moi que tu sais obéir à une consigne simple.",
+      "Tu peux mieux faire que « oui ». La prochaine étape va te demander un peu plus de discipline."
     ]:[
-      "Bien. Puisque tu acceptes, on passe à l’étape suivante.",
-      "Compris. Je vais te donner quelque chose de concret à faire.",
-      "Très bien. Ta réponse est enregistrée ; on continue.",
-      "D’accord. Maintenant, une consigne précise."
+      "Bien. Puisque tu acceptes, on avance.",
+      "Compris. Maintenant je te donne quelque chose de concret.",
+      "Très bien. Réponse enregistrée ; on passe à la suite.",
+      "D'accord. Une consigne précise arrive.",
+      "Accepté. Reste attentif, la prochaine étape change.",
+      "C'est noté. Maintenant, pas de réponse automatique : suis la consigne."
     ];
-    add(domPrefix()+pick(lines),"ai");
+    add(domPrefix()+harshLead()+pick(lines),"ai");
     setTimeout(newMission,320);
   }
   function replyCompleted(){
     state.completed+=1;award(10);
     var lines=[
-      "C’est noté. Tu as exécuté la consigne jusqu’au bout. +10 XP.",
-      "Mission validée. Cette fois, tu as répondu par l’action. +10 XP.",
-      "Bien. Consigne accomplie, série maintenue. +10 XP.",
-      "Validé. Je peux augmenter légèrement la difficulté maintenant. +10 XP."
+      "Mission validée. +10 XP. Pour une fois, tu as suivi jusqu'au bout.",
+      "C'est fait correctement. +10 XP. Ne prends pas ça pour une invitation à te relâcher.",
+      "Consigne accomplie. +10 XP. Voilà déjà quelque chose de moins pathétique que répondre « oui » en boucle.",
+      "Validé. +10 XP. Tu commences enfin à comprendre que l'action compte davantage que les mots.",
+      "Correct. +10 XP. Garde ce niveau d'attention.",
+      "Mission terminée. +10 XP. Tu progresses, lentement mais sûrement.",
+      "Bien exécuté. +10 XP. Je peux maintenant rendre la suite un peu plus exigeante.",
+      "Acceptable. +10 XP. Ne t'imagine pas que tu as fini pour autant."
     ];
-    add(domPrefix()+pick(lines),"ai");
+    add(domPrefix()+harshLead()+pick(lines),"ai");
     if(state.completed%2===0)setTimeout(newMission,450);
   }
   function replyQuestion(input){
     var l=input.toLowerCase();
     if(l.indexOf("pourquoi")>=0){
-      add(domPrefix()+pick([
-        "Parce que le jeu fonctionne mieux quand chaque consigne a un but : attente, discipline, contrôle ou progression. Tu peux refuser n’importe laquelle.",
-        "Parce que je construis la session à partir du niveau d’autorité et des limites que tu as choisis, pas au hasard complet.",
-        "Parce que ton accord fixe le cadre, puis je varie les défis à l’intérieur de ce cadre."
+      add(domPrefix()+harshLead()+pick([
+        "Parce que chaque consigne sert le rythme, le contrôle ou la discipline que tu as choisi. Et tu peux refuser à tout moment.",
+        "Parce que je construis la session à partir de tes réglages, pas simplement en répétant trois phrases.",
+        "Parce que ton accord définit les limites, puis je varie ce qui se passe à l'intérieur.",
+        "Parce que tu as demandé une dominante qui dirige réellement la session. Le cadre reste consensuel, le ton peut être dur."
       ]),"ai");return;
     }
     if(l.indexOf("quoi")>=0 || l.indexOf("que dois")>=0 || l.indexOf("je fais")>=0){
-      add(domPrefix()+"Tu veux une consigne claire ? Très bien.","ai");
+      add(domPrefix()+harshLead()+"Tu veux une consigne ? Très bien. Écoute et exécute.","ai");
       setTimeout(newMission,300);return;
     }
-    add(domPrefix()+pick([
-      "Bonne question. Je garde la réponse liée à la session : tes limites restent prioritaires et je peux adapter la prochaine consigne.",
-      "Je t’ai comprise/compris. Je vais répondre par quelque chose de concret plutôt que répéter une formule.",
-      "Je prends ta question en compte. Si tu demandes une nouvelle direction, je change la scène au lieu de tourner en boucle."
+    add(domPrefix()+harshLead()+pick([
+      "Je t'ai compris. Je réponds à ce que tu demandes et j'adapte la suite.",
+      "Ta question est prise en compte. Maintenant, reste concentré sur la réponse.",
+      "Je ne vais pas esquiver ta question avec une formule vide. La prochaine étape s'adaptera à ce que tu viens de dire.",
+      "C'est entendu. Tu peux poser des questions ; mon rôle n'efface pas tes limites."
     ]),"ai");
   }
   function aiReply(input){
@@ -214,29 +290,51 @@
     if(/\b(non|refuse|je veux pas|je ne veux pas|pas ça|pas ca)\b/.test(lower)){consentPause();return}
     if(/\b(terminé|termine|fait|accompli|fini|mission faite|c'est fait|cest fait)\b/.test(lower)){replyCompleted();return}
     if(/[?]$/.test(lower) || /^(pourquoi|comment|quoi|que dois|qu'est-ce|quest-ce)/.test(lower)){replyQuestion(input);return}
-    if(/\b(mission|tâche|tache|ordre|consigne)\b/.test(lower)){add(domPrefix()+"Tu en demandes une : je t’en donne une nouvelle.","ai");setTimeout(newMission,260);return}
+    if(/\b(mission|tâche|tache|ordre|consigne)\b/.test(lower)){
+      add(domPrefix()+harshLead()+"Tu réclames un ordre ? Très bien. Tu vas en avoir un.","ai");
+      setTimeout(newMission,260);return;
+    }
     if(/^(oui|oui maîtresse|oui maitresse|d'accord|daccord|ok|okay|à vos ordres|a vos ordres)[.! ]*$/.test(lower)){replyAcknowledgement();return}
     if(/\b(maîtresse|maitresse)\b/.test(lower)){
-      add(domPrefix()+pick([
-        "Tu peux m’appeler ainsi si c’est le rôle que tu as choisi. Maintenant, donne-moi une vraie réponse à la consigne.",
-        "Le titre est accepté. Mais je préfère voir ton attention dans ce que tu fais ensuite.",
-        "Très bien. Garde ce ton si tu le souhaites, et reste attentif à ce que je te demande."
+      add(domPrefix()+harshLead()+pick([
+        "Le titre est accepté. Maintenant cesse de t'en servir comme réponse universelle et suis la consigne.",
+        "Tu peux m'appeler ainsi. Mais ce titre ne te dispense pas d'être précis.",
+        "Très bien. Garde ce ton, petit insolent, et montre-moi que tu sais faire ce qui est demandé.",
+        "Le titre me convient. Maintenant j'attends de l'attention, pas de la flatterie automatique.",
+        "Tu voulais une maîtresse sévère ; alors ne t'étonne pas si je te demande davantage qu'un simple « oui ».",
+        "C'est noté. Maintenant sois utile à la session et réponds à ce que je demande."
       ]),"ai");return;
     }
+    if(/faire ce que vous voulez|comme vous voulez|vous décidez|tu décides|decidez|décide/.test(lower)){
+      add(domPrefix()+harshLead()+pick([
+        "Mauvaise habitude : me donner carte blanche ne remplace pas des limites claires. Je reste dans celles que tu as déjà définies et je choisis la prochaine étape.",
+        "Je décide du rythme, pas de tes limites. Celles-ci restent exactement celles que tu as choisies.",
+        "Très bien. Dans le cadre que tu as fixé, je prends le contrôle de la prochaine étape.",
+        "Tu me laisses choisir la suite, pas franchir tes limites. C'est suffisant."
+      ]),"ai");
+      setTimeout(newMission,350);return;
+    }
     var generic=authority()>=8?[
-      "Je t’ai lu. Je ne vais pas te répondre avec une formule vide : je vais utiliser ce que tu viens de dire pour la suite.",
-      "C’est plus intéressant. Continue avec des réponses précises et j’adapterai la session.",
-      "Je note ce que tu viens d’écrire. La prochaine étape sera différente de la précédente.",
-      "Tu me donnes enfin quelque chose à exploiter. Je vais faire évoluer la session au lieu de répéter la même consigne.",
-      "Compris. Je garde le contrôle du rythme, mais pas au prix d’une conversation répétitive."
+      "Je t'ai lu. Cette fois, je vais utiliser ce que tu viens de dire au lieu de te servir une formule automatique.",
+      "C'est plus intéressant. Garde cette précision, petit amateur, et la session deviendra moins prévisible.",
+      "Je note. La prochaine étape sera différente, alors reste attentif.",
+      "Voilà enfin quelque chose à exploiter. Ne gâche pas ça en retombant dans les réponses mécaniques.",
+      "Compris. Je contrôle le rythme, mais je ne vais pas tourner en rond pour te rassurer.",
+      "Tu veux une dominante sévère ? Alors donne-moi des réponses assez précises pour que je puisse réellement diriger la scène.",
+      "Mieux. Maintenant reste concentré : je peux varier le ton, les règles et les missions sans répéter la même rengaine.",
+      "Je t'entends. Ta réponse change ce que je vais te demander ensuite.",
+      "Pas mal. Tu commences enfin à me donner autre chose qu'un acquiescement automatique.",
+      "C'est enregistré. Tu n'as pas besoin de me flatter ; tu as besoin de suivre ce qui vient."
     ]:[
-      "Je comprends. Je vais faire évoluer la session à partir de ce que tu viens d’écrire.",
-      "C’est noté. On évite les réponses automatiques et on continue avec quelque chose de différent.",
-      "D’accord. Ton message change la direction de la prochaine étape.",
-      "Je t’ai lu. On poursuit avec une réponse adaptée plutôt qu’une phrase répétée."
+      "Je comprends. Je vais faire évoluer la session à partir de ce que tu viens d'écrire.",
+      "C'est noté. On évite les réponses automatiques et on continue différemment.",
+      "D'accord. Ton message change la direction de la prochaine étape.",
+      "Je t'ai lu. On poursuit avec quelque chose d'adapté.",
+      "Compris. Je vais varier la suite au lieu de recycler la même phrase.",
+      "Ça marche. Garde des réponses concrètes et la session restera plus vivante."
     ];
-    add(domPrefix()+pick(generic),"ai");
-    if(state.turn%3===0)setTimeout(newMission,400);
+    add(domPrefix()+harshLead()+pick(generic),"ai");
+    if(state.turn%2===0)setTimeout(newMission,420);
   }
   function stopSession(){
     add("Session arrêtée. Le safeword et le bouton STOP ont priorité sur tout.","ai");
