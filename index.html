@@ -88,7 +88,7 @@
   var state={
     xp:0,streak:0,photo:"",
     limits:{teasing:true,controle:true,discipline:true,humiliation:true},
-    recentReplies:[], turn:0, lastMission:"", completed:0
+    recentReplies:[], turn:0, lastMission:"", completed:0, missionCount:0, lastMissionType:"", recentMissions:[]
   };
   var $=function(id){return document.getElementById(id)};
   function show(id){["gate","setup","game"].forEach(function(x){$(x).classList.toggle("hidden",x!==id)})}
@@ -145,83 +145,120 @@
     ];
     return leads[Math.floor(Math.random()*leads.length)];
   }
-  function missionPool(){
+  function missionGroups(){
     var a=authority(), m=mode();
-    var pool=[
-      "Pose ton téléphone pendant 30 secondes. Tu reviens uniquement quand le temps est écoulé.",
-      "Réponds en une seule phrase à la prochaine consigne. Pas de bavardage inutile.",
-      "Reste silencieux pendant 60 secondes, puis écris uniquement « terminé ».",
-      "Relis ton prochain message deux fois avant de l'envoyer. Je veux quelque chose de propre et précis.",
-      "Choisis une règle simple que tu acceptes de respecter jusqu'à la fin de cette session.",
-      "Attends 45 secondes avant ta prochaine réponse. Si tu réponds trop tôt, tu recommences.",
-      "Pendant deux messages, tu n'utilises que des réponses courtes et directes.",
-      "Écris exactement ce que tu acceptes de me laisser décider dans cette session, sans détour.",
-      "Tu vas rester immobile pendant une minute, puis revenir confirmer que tu as tenu jusqu'au bout.",
-      "Ne demande rien pendant 90 secondes. Tu attends que ce soit moi qui relance.",
-      "Pour ton prochain message, aucun emoji, aucune excuse, aucune justification. Seulement la réponse demandée.",
-      "Tu vas compter lentement jusqu'à 30 avant d'écrire quoi que ce soit.",
-      "Pendant la prochaine minute, tu gardes les mains loin du clavier et tu attends.",
-      "Tu vas me demander la permission avant de changer de sujet pendant les trois prochains messages.",
-      "Réponds à la prochaine question sans utiliser le mot « oui ». Je veux voir si tu sais faire mieux.",
-      "Écris une phrase qui montre que tu as compris que le safeword passe avant mon autorité."
-    ];
-    if(state.limits.teasing && m!=="soft"){
-      pool.push(
-        "Teasing : tu attends 90 secondes avant de demander la suite. Je décide quand le rythme accélère.",
-        "Teasing : tu n'obtiens rien de plus maintenant. Tu patientes une minute complète avant ton prochain message.",
-        "Je te laisse volontairement dans l'attente. Reviens seulement après 75 secondes.",
-        "Tu veux la suite trop vite. Alors tu vas attendre deux minutes sans rien réclamer.",
-        "Pas de récompense immédiate. Tu attends jusqu'à ce que je décide que tu as assez patienté."
-      );
+    var groups={
+      dialogue:[
+        "Réponds en exactement trois mots à ceci : qu'est-ce que tu attends de moi dans cette session ?",
+        "Choisis un seul mot pour décrire le ton que tu veux recevoir : strict, cruel, moqueur ou froid.",
+        "Écris une phrase commençant par « Ma règle pour cette session est… » et termine-la sans te défiler.",
+        "Réponds sans utiliser « oui » ni « non » : est-ce que tu veux que je sois plus sévère ?",
+        "Donne-moi deux choses que tu acceptes dans le rôle, et une chose qui reste hors limite.",
+        "Écris la phrase la plus courte possible pour demander une nouvelle consigne correctement.",
+        "Dis-moi ce qui te plaît le plus dans la dynamique : contrôle, humiliation, teasing ou protocole.",
+        "Choisis : tu préfères être repris pour ton ton, pour ton manque de précision, ou pour ton impatience ?"
+      ],
+      controle:[
+        "Pendant les trois prochains messages, tu demandes la permission avant de changer de sujet.",
+        "Ton prochain message fera moins de huit mots. Pas un de plus.",
+        "Pour les deux prochains tours, aucune excuse et aucune justification : seulement des réponses nettes.",
+        "Tu vas reformuler ta dernière demande de manière plus disciplinée, en une seule phrase.",
+        "Je choisis ton format de réponse : « compris », puis une phrase courte expliquant ce que tu vas faire.",
+        "Pour le prochain tour, tu réponds sous la forme : « Règle comprise — [ta réponse] ».",
+        "Tu me donnes une réponse précise, puis tu t'arrêtes. Pas de seconde phrase pour te rattraper.",
+        "Pendant deux tours, tu ne poses aucune question. Tu réponds uniquement à ce que je demande."
+      ],
+      humiliation:[
+        "Écris « j'ai besoin d'une consigne claire parce que je me disperse trop vite ». Une fois, proprement.",
+        "Reformule ta dernière réponse comme si tu avais vraiment envie de montrer un peu de discipline.",
+        "Demande-moi une nouvelle mission sans flatterie inutile. Voyons si tu sais faire autre chose que supplier.",
+        "Écris une phrase courte qui reconnaît ton impatience sans t'excuser.",
+        "Choisis le surnom le plus humiliant que tu acceptes parmi ceux déjà utilisés, puis écris-le seul.",
+        "Tu vas me donner une réponse propre et concise, histoire de prouver que tu n'es pas seulement un petit provocateur.",
+        "Explique en une phrase pourquoi répondre « oui » en boucle ne mérite aucune récompense.",
+        "Réécris ta dernière demande de façon moins molle et plus disciplinée."
+      ],
+      protocole:[
+        "Pour la prochaine réponse, commence par « Maîtresse, » puis donne uniquement l'information demandée.",
+        "Choisis une règle de protocole pour trois tours : phrase courte, permission avant question, ou réponse sans emoji.",
+        "Pendant les trois prochains messages, termine chaque réponse par « compris ».",
+        "Tu vas me demander la permission avant de réclamer une nouvelle mission.",
+        "Ton prochain message commence par « À vos ordres » et contient ensuite une seule phrase.",
+        "Choisis un titre que tu veux utiliser pour le rôle pendant cette session et garde-le jusqu'à la fin.",
+        "Établis toi-même une règle de langage stricte que je pourrai te rappeler si tu l'oublies."
+      ],
+      action:[
+        "Redresse-toi, épaules en arrière, puis écris « prêt » quand la posture est tenue.",
+        "Pose les deux pieds au sol et garde cette posture pendant ton prochain message.",
+        "Éloigne une distraction de toi maintenant, puis reviens me dire laquelle tu as supprimée.",
+        "Mets-toi dans une posture droite et immobile pendant que tu rédiges ta prochaine réponse.",
+        "Choisis un endroit précis où poser ton téléphone entre deux messages et respecte-le pendant trois tours.",
+        "Lève-toi, fais trois pas, reviens et donne-moi une réponse plus précise que la précédente.",
+        "Ferme les yeux cinq secondes, puis écris ta prochaine réponse sans la modifier après coup."
+      ],
+      choix:[
+        "Choisis ton prochain type de défi : humiliation verbale, contrôle, protocole ou teasing.",
+        "Choisis ce que je contrôle pour les trois prochains tours : longueur de tes réponses, ton vocabulaire ou le moment où tu peux poser une question.",
+        "Choisis : je deviens plus froide, plus moqueuse ou plus autoritaire pour la suite.",
+        "Tu as droit à un seul privilège : poser une question, demander une récompense, ou choisir la prochaine catégorie. Choisis.",
+        "Choisis une conséquence fictive en cas de réponse bâclée : recommencer, reformuler ou perdre 10 XP.",
+        "Choisis ce que tu veux rendre plus difficile : les règles de langage, la précision, ou le protocole."
+      ],
+      adulte:[
+        "Mode adulte : écris en une phrase quel type de domination te paraît le plus excitant, sans description graphique.",
+        "Mode adulte : choisis entre teasing verbal, humiliation consensuelle et contrôle strict pour les trois prochains tours.",
+        "Mode adulte : dis-moi en une phrase ce qui rend le rôle excitant pour toi : l'autorité, le ton, l'attente ou la honte consentie.",
+        "Mode adulte : formule une demande de domination en restant suggestif et précis, sans tourner autour du pot.",
+        "Mode adulte : choisis le niveau d'humiliation verbale que tu veux maintenant : légère, forte ou très forte."
+      ],
+      attente:[
+        "Teasing : tu attends 30 secondes avant ton prochain message. Cette fois seulement.",
+        "Je te fais patienter 45 secondes. Ensuite, tu reviens avec une réponse précise.",
+        "Une seule pause : 20 secondes sans écrire, puis tu reprends la session."
+      ]
+    };
+    if(!state.limits.humiliation) groups.humiliation=[];
+    if(!state.limits.controle) groups.controle=[];
+    if(!state.limits.discipline) groups.protocole=[];
+    if(m==="soft") groups.adulte=[];
+    if(!state.limits.teasing || m==="soft") groups.attente=[];
+    if(a<6) groups.humiliation=groups.humiliation.slice(0,3);
+    return groups;
+  }
+  function chooseMissionType(groups){
+    var types=["dialogue","controle","humiliation","protocole","action","choix","adulte"];
+    types=types.filter(function(t){return groups[t]&&groups[t].length});
+    var allowWait=groups.attente&&groups.attente.length&&state.lastMissionType!=="attente"&&state.missionCount%4===3;
+    if(allowWait) types.push("attente");
+    if(state.lastMissionType){
+      var filtered=types.filter(function(t){return t!==state.lastMissionType});
+      if(filtered.length)types=filtered;
     }
-    if(state.limits.controle){
-      pool.push(
-        "Contrôle : les deux prochains messages feront moins de dix mots chacun.",
-        "Contrôle : tu n'envoies qu'un seul message à la fois et tu attends ma réponse avant le suivant.",
-        "Contrôle : tu me demandes la permission avant toute nouvelle demande pendant trois tours.",
-        "Contrôle : je choisis le rythme. Tu réponds seulement quand la consigne est terminée.",
-        "Contrôle : pendant deux minutes, aucune initiative. Tu suis simplement ce qui est demandé."
-      );
-    }
-    if(state.limits.discipline && a>=7){
-      pool.push(
-        "Discipline : corrige ta posture, attends 30 secondes et reviens avec « prêt ».",
-        "Discipline : si ta prochaine réponse dépasse une phrase, tu recommences.",
-        "Discipline : tu vas faire exactement ce qui est demandé, ni plus ni moins.",
-        "Discipline : tu prends 20 secondes avant chaque réponse pendant les deux prochains tours.",
-        "Discipline : une consigne, une exécution, une confirmation. Pas de négociation inutile."
-      );
-    }
-    if(state.limits.humiliation){
-      pool.push(
-        "Humiliation : écris « j'ai répondu trop vite » si tu as encore essayé de précipiter la session.",
-        "Humiliation : tu vas me montrer que tu sais suivre une règle simple sans te disperser.",
-        "Humiliation : pas de grand discours. Une phrase nette, sinon tu recommences comme un petit amateur.",
-        "Humiliation : tu attends en silence. Ton impatience n'est pas une raison pour que j'accélère.",
-        "Humiliation : tu me demandes proprement une nouvelle consigne au lieu de réclamer n'importe comment.",
-        "Humiliation : prouve que tu peux être discipliné avant d'espérer une récompense."
-      );
-    }
-    if(m==="bdsm"){
-      pool.push(
-        "Cadre BDSM : tu me demandes la prochaine consigne clairement, puis tu attends ma réponse sans relancer.",
-        "Cadre BDSM : le pouvoir reste dans les limites convenues. Pour l'instant, tu patientes et tu suis le rythme.",
-        "Cadre BDSM : une minute d'attente contrôlée, puis une confirmation courte. Rien de plus.",
-        "Cadre BDSM : tu gardes le rôle que tu as choisi et tu attends mon autorisation avant de réclamer la suite.",
-        "Cadre BDSM : je choisis la prochaine étape. Toi, tu me confirmes seulement quand tu es prêt à continuer."
-      );
-    }
-    return pool;
+    return types[Math.floor(Math.random()*types.length)];
   }
   function newMission(){
-    var pool=missionPool();
-    var mission=pick(pool);
-    if(mission===state.lastMission){
-      var alternatives=pool.filter(function(x){return x!==state.lastMission});
-      if(alternatives.length)mission=alternatives[Math.floor(Math.random()*alternatives.length)];
-    }
+    var groups=missionGroups();
+    var type=chooseMissionType(groups);
+    var pool=(groups[type]||[]).filter(function(x){return state.recentMissions.indexOf(x)<0});
+    if(!pool.length)pool=(groups[type]||[]).slice();
+    if(!pool.length){type="dialogue";pool=groups.dialogue.slice()}
+    var mission=pool[Math.floor(Math.random()*pool.length)];
     state.lastMission=mission;
-    add("MISSION — "+harshLead()+mission,"ai");
+    state.lastMissionType=type;
+    state.missionCount+=1;
+    state.recentMissions.push(mission);
+    if(state.recentMissions.length>12)state.recentMissions.shift();
+    var tag={
+      dialogue:"DÉFI",
+      controle:"CONTRÔLE",
+      humiliation:"HUMILIATION",
+      protocole:"PROTOCOLE",
+      action:"ACTION",
+      choix:"CHOIX",
+      adulte:"MODE ADULTE",
+      attente:"TEASING"
+    }[type]||"MISSION";
+    add(tag+" — "+harshLead()+mission,"ai");
   }
   function replyAcknowledgement(){
     var a=authority();
@@ -362,7 +399,7 @@
   });
   $("start").addEventListener("click",function(){
     var name=$("domName").value.trim()||"Madame Nova";
-    state.recentReplies=[];state.turn=0;state.completed=0;state.lastMission="";
+    state.recentReplies=[];state.turn=0;state.completed=0;state.lastMission="";state.missionCount=0;state.lastMissionType="";state.recentMissions=[];
     $("showName").textContent=name;
     $("showStyle").textContent=$("style").value+" • Autorité "+$("authority").value+"/10";
     $("modeLabel").textContent=mode()==="bdsm"?"BDSM":(mode()==="soft"?"Non sexuel":"Suggestif");
