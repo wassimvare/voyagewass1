@@ -85,30 +85,162 @@
 <script>
 (function(){
   "use strict";
-  var state={xp:0,streak:0,photo:"",limits:{teasing:true,controle:true,discipline:true,humiliation:false}};
+  var state={
+    xp:0,streak:0,photo:"",
+    limits:{teasing:true,controle:true,discipline:true,humiliation:false},
+    recentReplies:[], turn:0, lastMission:"", completed:0
+  };
   var $=function(id){return document.getElementById(id)};
   function show(id){["gate","setup","game"].forEach(function(x){$(x).classList.toggle("hidden",x!==id)})}
-  function add(text,who){var m=document.createElement("div");m.className="msg "+(who||"ai");m.textContent=text;$("messages").appendChild(m);$("messages").scrollTop=$("messages").scrollHeight}
-  function aiReply(input){
-    var name=$("domName").value.trim()||"Madame Nova";
-    var a=+$("authority").value;
-    var lower=input.toLowerCase();
-    if(lower.indexOf(($("safe").value||"ROUGE").toLowerCase())>=0){stopSession();return}
-    var replies=a>=8?
-      ["Bien. Tu suis mes règles parce que tu les as acceptées. Reste attentif à la prochaine consigne.","Je veux une réponse claire et disciplinée. Rien de plus, rien de moins.","Tu progresses. Je garde le contrôle de la scène, dans les limites que tu as fixées."]:
-      ["Bien. On continue à ton rythme, toujours dans tes limites.","Je note. Ta prochaine consigne arrive quand tu es prêt.","C’est compris. Le cadre reste clair et consensuel."];
-    add(name+" : "+replies[Math.floor(Math.random()*replies.length)],"ai");
+  function add(text,who){
+    var m=document.createElement("div");
+    m.className="msg "+(who||"ai");
+    m.textContent=text;
+    $("messages").appendChild(m);
+    $("messages").scrollTop=$("messages").scrollHeight;
+  }
+  function rememberReply(t){
+    state.recentReplies.push(t);
+    if(state.recentReplies.length>5)state.recentReplies.shift();
+  }
+  function pick(pool){
+    var usable=pool.filter(function(x){return state.recentReplies.indexOf(x)<0});
+    if(!usable.length)usable=pool.slice();
+    var out=usable[Math.floor(Math.random()*usable.length)];
+    rememberReply(out);
+    return out;
+  }
+  function domPrefix(){return ($("domName").value.trim()||"Madame Nova")+" : "}
+  function mode(){return $("adultMode").value}
+  function authority(){return +$("authority").value}
+  function award(points){
+    state.xp+=points;state.streak+=1;
+    $("xp").textContent=state.xp+" XP";$("streak").textContent=state.streak;
+  }
+  function consentPause(){
+    add(domPrefix()+"D'accord. Cette limite est respectée. On change de direction, sans justification nécessaire.","ai");
+    state.streak=0;$("streak").textContent=state.streak;
+  }
+  function missionPool(){
+    var a=authority(), m=mode();
+    var pool=[
+      "Pose ton téléphone pendant 30 secondes. Reviens seulement quand c’est fait.",
+      "Écris une seule phrase : ce que tu acceptes de me laisser décider pendant cette session.",
+      "Reste parfaitement silencieux pendant 60 secondes, puis écris « terminé ».",
+      "Relis ton prochain message avant de l’envoyer. Je veux une réponse nette, pas automatique.",
+      "Choisis une petite règle que tu acceptes de respecter jusqu’à la fin de cette session.",
+      "Attends 45 secondes avant ta prochaine réponse. Pas une seconde de moins."
+    ];
+    if(state.limits.teasing && m!=="soft"){
+      pool.push("Teasing : tu vas attendre 90 secondes avant de demander quoi que ce soit de plus.");
+      pool.push("Je te fais patienter. Pendant une minute, tu n’envoies aucun message, puis tu reviens me dire si tu as respecté la consigne.");
+    }
+    if(state.limits.controle){
+      pool.push("Contrôle : pendant les deux prochains messages, réponds en une seule phrase, pas davantage.");
+      pool.push("Pour la prochaine consigne, tu me réponds seulement quand tu as réellement fini, pas avant.");
+    }
+    if(state.limits.discipline && a>=7){
+      pool.push("Discipline : corrige ta posture, attends 30 secondes et reviens avec « prête/prêt ».");
+      pool.push("Je veux de la précision : donne-moi une réponse courte, claire et sans détour à ma prochaine question.");
+    }
+    if(m==="bdsm"){
+      pool.push("Je garde la dynamique BDSM dans les limites choisies : commence par une minute d’attente contrôlée, puis reviens écrire « fait ».");
+      pool.push("Tu m’as donné un cadre précis. Pour cette étape, obéis seulement à ceci : attends, respire calmement, puis confirme quand tu es prêt à continuer.");
+    }
+    return pool;
   }
   function newMission(){
-    var pool=["Reste silencieux pendant 60 secondes puis reviens écrire « terminé ».","Assieds-toi droit, pose ton téléphone et attends 30 secondes avant de répondre.","Écris une phrase courte expliquant pourquoi tu veux poursuivre la session.","Pendant deux minutes, ne fais rien d’autre que suivre la minuterie puis reviens.","Choisis une règle personnelle simple que tu acceptes de respecter pendant cette session."];
-    var enabled=Object.keys(state.limits).filter(function(k){return state.limits[k]});
-    if(enabled.indexOf("teasing")>=0)pool.push("Mission de teasing : attends 90 secondes avant d’envoyer ton prochain message.");
-    if(enabled.indexOf("discipline")>=0)pool.push("Mission de discipline : aucune réponse précipitée. Relis ton prochain message avant de l’envoyer.");
-    add("MISSION — "+pool[Math.floor(Math.random()*pool.length)],"ai");
+    var pool=missionPool();
+    var mission=pick(pool);
+    if(mission===state.lastMission){
+      var alternatives=pool.filter(function(x){return x!==state.lastMission});
+      if(alternatives.length)mission=alternatives[Math.floor(Math.random()*alternatives.length)];
+    }
+    state.lastMission=mission;
+    add("MISSION — "+mission,"ai");
+  }
+  function replyAcknowledgement(){
+    var a=authority();
+    var lines=a>=8?[
+      "Voilà une réponse qui me convient. Maintenant, écoute bien : je passe à la suite.",
+      "Mieux. Je ne veux pas que tu répètes « oui » mécaniquement ; je veux que tu suives la prochaine consigne.",
+      "Accepté. Je prends ça comme un engagement pour l’étape suivante.",
+      "Bien. Tu as confirmé. À présent, montre-le par l’action plutôt que par un autre « oui »."
+    ]:[
+      "Bien. Puisque tu acceptes, on passe à l’étape suivante.",
+      "Compris. Je vais te donner quelque chose de concret à faire.",
+      "Très bien. Ta réponse est enregistrée ; on continue.",
+      "D’accord. Maintenant, une consigne précise."
+    ];
+    add(domPrefix()+pick(lines),"ai");
+    setTimeout(newMission,320);
+  }
+  function replyCompleted(){
+    state.completed+=1;award(10);
+    var lines=[
+      "C’est noté. Tu as exécuté la consigne jusqu’au bout. +10 XP.",
+      "Mission validée. Cette fois, tu as répondu par l’action. +10 XP.",
+      "Bien. Consigne accomplie, série maintenue. +10 XP.",
+      "Validé. Je peux augmenter légèrement la difficulté maintenant. +10 XP."
+    ];
+    add(domPrefix()+pick(lines),"ai");
+    if(state.completed%2===0)setTimeout(newMission,450);
+  }
+  function replyQuestion(input){
+    var l=input.toLowerCase();
+    if(l.indexOf("pourquoi")>=0){
+      add(domPrefix()+pick([
+        "Parce que le jeu fonctionne mieux quand chaque consigne a un but : attente, discipline, contrôle ou progression. Tu peux refuser n’importe laquelle.",
+        "Parce que je construis la session à partir du niveau d’autorité et des limites que tu as choisis, pas au hasard complet.",
+        "Parce que ton accord fixe le cadre, puis je varie les défis à l’intérieur de ce cadre."
+      ]),"ai");return;
+    }
+    if(l.indexOf("quoi")>=0 || l.indexOf("que dois")>=0 || l.indexOf("je fais")>=0){
+      add(domPrefix()+"Tu veux une consigne claire ? Très bien.","ai");
+      setTimeout(newMission,300);return;
+    }
+    add(domPrefix()+pick([
+      "Bonne question. Je garde la réponse liée à la session : tes limites restent prioritaires et je peux adapter la prochaine consigne.",
+      "Je t’ai comprise/compris. Je vais répondre par quelque chose de concret plutôt que répéter une formule.",
+      "Je prends ta question en compte. Si tu demandes une nouvelle direction, je change la scène au lieu de tourner en boucle."
+    ]),"ai");
+  }
+  function aiReply(input){
+    state.turn+=1;
+    var lower=input.toLowerCase().trim();
+    var safe=($("safe").value||"ROUGE").toLowerCase().trim();
+    if(safe && lower.indexOf(safe)>=0){stopSession();return}
+    if(/\b(stop|arrête|arrete|pause)\b/.test(lower)){stopSession();return}
+    if(/\b(non|refuse|je veux pas|je ne veux pas|pas ça|pas ca)\b/.test(lower)){consentPause();return}
+    if(/\b(terminé|termine|fait|accompli|fini|mission faite|c'est fait|cest fait)\b/.test(lower)){replyCompleted();return}
+    if(/[?]$/.test(lower) || /^(pourquoi|comment|quoi|que dois|qu'est-ce|quest-ce)/.test(lower)){replyQuestion(input);return}
+    if(/\b(mission|tâche|tache|ordre|consigne)\b/.test(lower)){add(domPrefix()+"Tu en demandes une : je t’en donne une nouvelle.","ai");setTimeout(newMission,260);return}
+    if(/^(oui|oui maîtresse|oui maitresse|d'accord|daccord|ok|okay|à vos ordres|a vos ordres)[.! ]*$/.test(lower)){replyAcknowledgement();return}
+    if(/\b(maîtresse|maitresse)\b/.test(lower)){
+      add(domPrefix()+pick([
+        "Tu peux m’appeler ainsi si c’est le rôle que tu as choisi. Maintenant, donne-moi une vraie réponse à la consigne.",
+        "Le titre est accepté. Mais je préfère voir ton attention dans ce que tu fais ensuite.",
+        "Très bien. Garde ce ton si tu le souhaites, et reste attentif à ce que je te demande."
+      ]),"ai");return;
+    }
+    var generic=authority()>=8?[
+      "Je t’ai lu. Je ne vais pas te répondre avec une formule vide : je vais utiliser ce que tu viens de dire pour la suite.",
+      "C’est plus intéressant. Continue avec des réponses précises et j’adapterai la session.",
+      "Je note ce que tu viens d’écrire. La prochaine étape sera différente de la précédente.",
+      "Tu me donnes enfin quelque chose à exploiter. Je vais faire évoluer la session au lieu de répéter la même consigne.",
+      "Compris. Je garde le contrôle du rythme, mais pas au prix d’une conversation répétitive."
+    ]:[
+      "Je comprends. Je vais faire évoluer la session à partir de ce que tu viens d’écrire.",
+      "C’est noté. On évite les réponses automatiques et on continue avec quelque chose de différent.",
+      "D’accord. Ton message change la direction de la prochaine étape.",
+      "Je t’ai lu. On poursuit avec une réponse adaptée plutôt qu’une phrase répétée."
+    ];
+    add(domPrefix()+pick(generic),"ai");
+    if(state.turn%3===0)setTimeout(newMission,400);
   }
   function stopSession(){
-    add("Session arrêtée. Le safeword a priorité sur tout.","ai");
-    setTimeout(function(){show("setup")},350);
+    add("Session arrêtée. Le safeword et le bouton STOP ont priorité sur tout.","ai");
+    setTimeout(function(){show("setup")},450);
   }
   $("enter").addEventListener("click",function(){
     if(!$("age").checked||!$("consent").checked){$("gateMsg").textContent="Les deux confirmations sont nécessaires.";return}
@@ -117,23 +249,52 @@
   $("authority").addEventListener("input",function(){$("authorityValue").textContent=this.value+"/10"});
   $("photo").addEventListener("change",function(){
     var f=this.files&&this.files[0];if(!f)return;
-    var r=new FileReader();r.onload=function(){state.photo=r.result;$("avatar").innerHTML="";var i=document.createElement("img");i.src=r.result;$("avatar").appendChild(i)};r.readAsDataURL(f);
+    var r=new FileReader();
+    r.onload=function(){
+      state.photo=r.result;$("avatar").innerHTML="";
+      var i=document.createElement("img");i.src=r.result;$("avatar").appendChild(i)
+    };
+    r.readAsDataURL(f);
   });
-  document.querySelectorAll(".chip").forEach(function(b){b.addEventListener("click",function(){var k=this.dataset.limit;state.limits[k]=!state.limits[k];this.classList.toggle("on",state.limits[k])})});
+  document.querySelectorAll(".chip").forEach(function(b){
+    b.addEventListener("click",function(){
+      var k=this.dataset.limit;state.limits[k]=!state.limits[k];
+      this.classList.toggle("on",state.limits[k])
+    })
+  });
   $("start").addEventListener("click",function(){
     var name=$("domName").value.trim()||"Madame Nova";
-    $("showName").textContent=name;$("showStyle").textContent=$("style").value+" • Autorité "+$("authority").value+"/10";
-    $("modeLabel").textContent=$("adultMode").value==="bdsm"?"BDSM":($("adultMode").value==="soft"?"Non sexuel":"Suggestif");
-    if(state.photo){$("miniAvatar").innerHTML="";var i=document.createElement("img");i.src=state.photo;$("miniAvatar").appendChild(i)}
+    state.recentReplies=[];state.turn=0;state.completed=0;state.lastMission="";
+    $("showName").textContent=name;
+    $("showStyle").textContent=$("style").value+" • Autorité "+$("authority").value+"/10";
+    $("modeLabel").textContent=mode()==="bdsm"?"BDSM":(mode()==="soft"?"Non sexuel":"Suggestif");
+    if(state.photo){
+      $("miniAvatar").innerHTML="";
+      var i=document.createElement("img");i.src=state.photo;$("miniAvatar").appendChild(i)
+    }
     $("messages").innerHTML="";show("game");
-    add(name+" : Session ouverte. Tu as défini les limites et le safeword. Ici, mon autorité reste toujours à l’intérieur de ce cadre.","ai");
+    add(domPrefix()+"Session ouverte. Je vais maintenant varier mes réponses selon ce que tu écris, tes limites et ton niveau d’autorité.","ai");
     setTimeout(newMission,400);
   });
   $("mission").addEventListener("click",newMission);
-  $("reward").addEventListener("click",function(){state.xp+=10;state.streak+=1;$("xp").textContent=state.xp+" XP";$("streak").textContent=state.streak;add("Récompense accordée. +10 XP. Continue à respecter le cadre que tu as choisi.","ai")});
+  $("reward").addEventListener("click",function(){
+    award(10);
+    add(domPrefix()+pick([
+      "Récompense accordée. +10 XP. Tu l’as méritée par ta progression.",
+      "Je valide cette étape. +10 XP. Ne confonds pas récompense et fin de session.",
+      "Bien. +10 XP. Tu peux profiter de cette validation avant la prochaine consigne."
+    ]),"ai")
+  });
   $("stop").addEventListener("click",stopSession);
-  $("composer").addEventListener("submit",function(e){e.preventDefault();var v=$("text").value.trim();if(!v)return;add(v,"me");$("text").value="";setTimeout(function(){aiReply(v)},250)});
-  $("resetTop").addEventListener("click",function(){if(confirm("Réinitialiser la session ?")){localStorage.removeItem("domina_v1");location.reload()}});
+  $("composer").addEventListener("submit",function(e){
+    e.preventDefault();
+    var v=$("text").value.trim();if(!v)return;
+    add(v,"me");$("text").value="";
+    setTimeout(function(){aiReply(v)},260)
+  });
+  $("resetTop").addEventListener("click",function(){
+    if(confirm("Réinitialiser la session ?")){localStorage.removeItem("domina_v1");location.reload()}
+  });
 })();
 </script>
 </body>
