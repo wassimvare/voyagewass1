@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#09070d">
+<title>DOMINA AI — V1</title>
+<style>
+:root{--bg:#09070d;--panel:#17111f;--panel2:#100c17;--line:#32253f;--text:#f9f3ff;--muted:#ab9db6;--a:#b267ff;--b:#ff4d9d;--danger:#ff4567;--ok:#60d99e}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:radial-gradient(circle at top,#251333 0,#09070d 52%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,select{font:inherit}
+.wrap{width:min(920px,calc(100% - 24px));margin:auto;padding:18px 0 42px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.brand{font-weight:900;letter-spacing:.03em}.brand span{background:linear-gradient(135deg,var(--a),var(--b));padding:7px 10px;border-radius:11px;margin-right:8px}.card{background:linear-gradient(180deg,rgba(25,18,34,.97),rgba(14,10,20,.97));border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:24px;box-shadow:0 25px 70px rgba(0,0,0,.35)}.gate{max-width:720px;margin:7vh auto}.eyebrow{font-size:12px;font-weight:900;letter-spacing:.18em;color:#d39cff}.gate h1{font-size:clamp(36px,10vw,64px);line-height:1;letter-spacing:-.05em;margin:10px 0 16px}.lead{font-size:17px;color:#cdbfd7}.check{display:flex;gap:12px;align-items:flex-start;margin:16px 0;color:#e5d9eb}.check input{width:22px;height:22px;accent-color:var(--a);flex:0 0 auto}.btn{border:0;border-radius:14px;padding:13px 17px;font-weight:850;cursor:pointer}.primary{background:linear-gradient(135deg,var(--a),var(--b));color:#fff}.secondary{background:#2a2036;color:#fff;border:1px solid #463257}.danger{background:#391521;color:#ff9ab0;border:1px solid #6b263b}.wide{width:100%}.hint{font-size:13px;color:var(--muted);margin-top:12px}.hidden{display:none!important}.grid{display:grid;grid-template-columns:220px 1fr;gap:18px}.avatarBox{background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:14px}.avatar{aspect-ratio:1;border-radius:16px;display:grid;place-items:center;background:radial-gradient(circle at 35% 25%,#70418c,#17101f 60%);overflow:hidden;font-size:52px;font-weight:900}.avatar img{width:100%;height:100%;object-fit:cover}.upload{display:block;text-align:center;margin-top:12px;padding:11px;border-radius:12px;background:#24192f;border:1px dashed #684c7f;color:#eadbfa;font-weight:800}.upload input{display:none}.fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}.fields label{font-size:13px;color:#c5b7cc}.fields input,.fields select{width:100%;margin-top:6px;padding:12px;border-radius:12px;background:#0f0b15;border:1px solid var(--line);color:white}.full{grid-column:1/-1}.rangeRow{display:flex;gap:12px;align-items:center}.rangeRow input{flex:1}.pill{background:#2a2036;border:1px solid #4b365f;border-radius:999px;padding:5px 9px;font-size:12px}.limits{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}.chip{border:1px solid var(--line);background:#17111f;color:#cdbfd4;border-radius:999px;padding:9px 12px;cursor:pointer}.chip.on{background:#382249;border-color:#8157a8;color:#fff}.game{display:grid;grid-template-columns:260px 1fr;gap:18px}.side{height:max-content}.profile{display:flex;gap:12px;align-items:center}.miniAvatar{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#673e80,#1b1125);display:grid;place-items:center;overflow:hidden;font-size:26px;font-weight:900}.miniAvatar img{width:100%;height:100%;object-fit:cover}.online{font-size:11px;color:#82eab7;font-weight:900}.stats{display:grid;gap:8px;margin-top:18px}.stat{display:flex;justify-content:space-between;background:#100c17;border:1px solid var(--line);padding:10px 12px;border-radius:12px}.chat{display:flex;flex-direction:column;min-height:600px}.messages{flex:1;display:flex;flex-direction:column;gap:10px;overflow:auto;padding-bottom:12px}.msg{max-width:82%;padding:12px 14px;border-radius:16px;line-height:1.45}.ai{align-self:flex-start;background:#23172d;border:1px solid #3e294f}.me{align-self:flex-end;background:linear-gradient(135deg,#6f3ea0,#b63478)}.composer{display:flex;gap:9px;border-top:1px solid var(--line);padding-top:14px}.composer input{flex:1;border-radius:13px;border:1px solid var(--line);background:#0f0b15;color:#fff;padding:12px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.notice{background:#16101e;border:1px solid var(--line);border-radius:14px;padding:12px;color:#c8b8d0;font-size:13px;margin-bottom:12px}
+@media(max-width:720px){.grid,.game{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.full{grid-column:auto}.side{position:static}.chat{min-height:62vh}.card{padding:18px}.gate{margin:3vh auto}.actions{grid-template-columns:1fr}.top{padding-top:env(safe-area-inset-top)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><div class="brand"><span>D</span>DOMINA AI</div><button id="resetTop" class="btn secondary" type="button">Réinitialiser</button></div>
+
+  <section id="gate" class="card gate">
+    <div class="eyebrow">ACCÈS ADULTE</div>
+    <h1>Une dominante IA qui s’adapte à tes limites.</h1>
+    <p class="lead">Prototype fictif réservé aux adultes, dans un cadre consensuel. Le bouton STOP interrompt immédiatement toute session.</p>
+    <label class="check"><input id="age" type="checkbox"><span>Je confirme avoir 18 ans ou plus.</span></label>
+    <label class="check"><input id="consent" type="checkbox"><span>Je comprends que les scènes sont fictives et consensuelles.</span></label>
+    <button id="enter" class="btn primary" type="button">Entrer</button>
+    <div id="gateMsg" class="hint">Coche les deux cases pour continuer.</div>
+  </section>
+
+  <section id="setup" class="card hidden">
+    <h2>Créer ta dominante</h2>
+    <div class="grid">
+      <div class="avatarBox">
+        <div id="avatar" class="avatar">D</div>
+        <label class="upload">Choisir une photo<input id="photo" type="file" accept="image/*"></label>
+        <p class="hint">Utilise seulement ta propre image, un personnage fictif ou l’image d’un adulte ayant donné son accord.</p>
+      </div>
+      <div class="fields">
+        <label>Nom<input id="domName" value="Madame Nova" maxlength="30"></label>
+        <label>Style<select id="style"><option>Ferme</option><option>Froide</option><option>Élégante</option><option>Joueuse</option></select></label>
+        <label class="full">Niveau d’autorité <span id="authorityValue" class="pill">7/10</span><div class="rangeRow"><input id="authority" type="range" min="1" max="10" value="7"></div></label>
+        <label>Safeword<input id="safe" value="ROUGE" maxlength="20"></label>
+        <label>Mode<select id="adultMode"><option value="suggestif">Adulte suggestif</option><option value="bdsm">BDSM consensuel</option><option value="soft">Non sexuel</option></select></label>
+        <div class="full">
+          <div class="hint">Thèmes autorisés dans cette V1 :</div>
+          <div class="limits">
+            <button class="chip on" data-limit="teasing" type="button">Teasing</button>
+            <button class="chip on" data-limit="controle" type="button">Contrôle</button>
+            <button class="chip on" data-limit="discipline" type="button">Discipline</button>
+            <button class="chip" data-limit="humiliation" type="button">Humiliation</button>
+          </div>
+        </div>
+        <button id="start" class="btn primary wide full" type="button">Commencer la session</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="game" class="game hidden">
+    <aside class="card side">
+      <div class="profile">
+        <div id="miniAvatar" class="miniAvatar">D</div>
+        <div><div class="online">● SESSION ACTIVE</div><h2 id="showName" style="margin:4px 0">Madame Nova</h2><div id="showStyle" class="hint">Ferme • Autorité 7/10</div></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><span>Obéissance</span><strong id="xp">0 XP</strong></div>
+        <div class="stat"><span>Série</span><strong id="streak">0</strong></div>
+        <div class="stat"><span>Mode</span><strong id="modeLabel">Suggestif</strong></div>
+      </div>
+      <div class="actions">
+        <button id="mission" class="btn secondary" type="button">Nouvelle mission</button>
+        <button id="reward" class="btn secondary" type="button">Récompense</button>
+      </div>
+      <button id="stop" class="btn danger wide" style="margin-top:10px" type="button">STOP / SAFEWORD</button>
+      <p class="hint">STOP coupe immédiatement la session et revient à l’écran de configuration.</p>
+    </aside>
+    <main class="card chat">
+      <div class="notice">V1 locale simulée : aucune conversation n’est envoyée à un serveur. Une vraie IA pourra être branchée ensuite.</div>
+      <div id="messages" class="messages"></div>
+      <form id="composer" class="composer">
+        <input id="text" autocomplete="off" placeholder="Écris ta réponse…">
+        <button class="btn primary" type="submit">Envoyer</button>
+      </form>
+    </main>
+  </section>
+</div>
+<script>
+(function(){
+  "use strict";
+  var state={xp:0,streak:0,photo:"",limits:{teasing:true,controle:true,discipline:true,humiliation:false}};
+  var $=function(id){return document.getElementById(id)};
+  function show(id){["gate","setup","game"].forEach(function(x){$(x).classList.toggle("hidden",x!==id)})}
+  function add(text,who){var m=document.createElement("div");m.className="msg "+(who||"ai");m.textContent=text;$("messages").appendChild(m);$("messages").scrollTop=$("messages").scrollHeight}
+  function aiReply(input){
+    var name=$("domName").value.trim()||"Madame Nova";
+    var a=+$("authority").value;
+    var lower=input.toLowerCase();
+    if(lower.indexOf(($("safe").value||"ROUGE").toLowerCase())>=0){stopSession();return}
+    var replies=a>=8?
+      ["Bien. Tu suis mes règles parce que tu les as acceptées. Reste attentif à la prochaine consigne.","Je veux une réponse claire et disciplinée. Rien de plus, rien de moins.","Tu progresses. Je garde le contrôle de la scène, dans les limites que tu as fixées."]:
+      ["Bien. On continue à ton rythme, toujours dans tes limites.","Je note. Ta prochaine consigne arrive quand tu es prêt.","C’est compris. Le cadre reste clair et consensuel."];
+    add(name+" : "+replies[Math.floor(Math.random()*replies.length)],"ai");
+  }
+  function newMission(){
+    var pool=["Reste silencieux pendant 60 secondes puis reviens écrire « terminé ».","Assieds-toi droit, pose ton téléphone et attends 30 secondes avant de répondre.","Écris une phrase courte expliquant pourquoi tu veux poursuivre la session.","Pendant deux minutes, ne fais rien d’autre que suivre la minuterie puis reviens.","Choisis une règle personnelle simple que tu acceptes de respecter pendant cette session."];
+    var enabled=Object.keys(state.limits).filter(function(k){return state.limits[k]});
+    if(enabled.indexOf("teasing")>=0)pool.push("Mission de teasing : attends 90 secondes avant d’envoyer ton prochain message.");
+    if(enabled.indexOf("discipline")>=0)pool.push("Mission de discipline : aucune réponse précipitée. Relis ton prochain message avant de l’envoyer.");
+    add("MISSION — "+pool[Math.floor(Math.random()*pool.length)],"ai");
+  }
+  function stopSession(){
+    add("Session arrêtée. Le safeword a priorité sur tout.","ai");
+    setTimeout(function(){show("setup")},350);
+  }
+  $("enter").addEventListener("click",function(){
+    if(!$("age").checked||!$("consent").checked){$("gateMsg").textContent="Les deux confirmations sont nécessaires.";return}
+    $("gateMsg").textContent="Accès validé.";show("setup");
+  });
+  $("authority").addEventListener("input",function(){$("authorityValue").textContent=this.value+"/10"});
+  $("photo").addEventListener("change",function(){
+    var f=this.files&&this.files[0];if(!f)return;
+    var r=new FileReader();r.onload=function(){state.photo=r.result;$("avatar").innerHTML="";var i=document.createElement("img");i.src=r.result;$("avatar").appendChild(i)};r.readAsDataURL(f);
+  });
+  document.querySelectorAll(".chip").forEach(function(b){b.addEventListener("click",function(){var k=this.dataset.limit;state.limits[k]=!state.limits[k];this.classList.toggle("on",state.limits[k])})});
+  $("start").addEventListener("click",function(){
+    var name=$("domName").value.trim()||"Madame Nova";
+    $("showName").textContent=name;$("showStyle").textContent=$("style").value+" • Autorité "+$("authority").value+"/10";
+    $("modeLabel").textContent=$("adultMode").value==="bdsm"?"BDSM":($("adultMode").value==="soft"?"Non sexuel":"Suggestif");
+    if(state.photo){$("miniAvatar").innerHTML="";var i=document.createElement("img");i.src=state.photo;$("miniAvatar").appendChild(i)}
+    $("messages").innerHTML="";show("game");
+    add(name+" : Session ouverte. Tu as défini les limites et le safeword. Ici, mon autorité reste toujours à l’intérieur de ce cadre.","ai");
+    setTimeout(newMission,400);
+  });
+  $("mission").addEventListener("click",newMission);
+  $("reward").addEventListener("click",function(){state.xp+=10;state.streak+=1;$("xp").textContent=state.xp+" XP";$("streak").textContent=state.streak;add("Récompense accordée. +10 XP. Continue à respecter le cadre que tu as choisi.","ai")});
+  $("stop").addEventListener("click",stopSession);
+  $("composer").addEventListener("submit",function(e){e.preventDefault();var v=$("text").value.trim();if(!v)return;add(v,"me");$("text").value="";setTimeout(function(){aiReply(v)},250)});
+  $("resetTop").addEventListener("click",function(){if(confirm("Réinitialiser la session ?")){localStorage.removeItem("domina_v1");location.reload()}});
+})();
+</script>
+</body>
+</html>
