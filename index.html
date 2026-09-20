@@ -75,7 +75,7 @@
       <p class="hint">STOP coupe immédiatement la session et revient à l’écran de configuration.</p>
     </aside>
     <main class="card chat">
-      <div class="notice">Mode local de secours : ordres variés sans serveur. Le mode vraie IA nécessite le backend API en cours de branchement.</div>
+      <div class="notice">Vraie IA connectée avec mémoire de session. Si le serveur IA est momentanément indisponible, le moteur local prend automatiquement le relais.</div>
       <div id="messages" class="messages"></div>
       <form id="composer" class="composer">
         <input id="text" autocomplete="off" placeholder="Écris ta réponse…">
@@ -90,7 +90,7 @@
   var state={
     xp:0,streak:0,photo:"",
     limits:{teasing:true,controle:true,discipline:true,humiliation:true,presence:true},
-    recentReplies:[], turn:0, lastMission:"", completed:0, missionCount:0, lastMissionType:"", recentMissions:[], missionOpen:false
+    recentReplies:[], turn:0, lastMission:"", completed:0, missionCount:0, lastMissionType:"", recentMissions:[], missionOpen:false, aiHistory:[], aiBusy:false
   };
   var $=function(id){return document.getElementById(id)};
   function show(id){["gate","setup","game"].forEach(function(x){$(x).classList.toggle("hidden",x!==id)})}
@@ -353,6 +353,73 @@
       "C'est entendu. Tu peux poser des questions ; mon rôle n'efface pas tes limites."
     ]),"ai");
   }
+  var AI_ENDPOINT="https://gevkjgivjsynhmsmrctu.supabase.co/functions/v1/domina-chat";
+
+  function settingsForAI(){
+    return {
+      name:$("domName").value.trim()||"Maîtresse",
+      style:$("style").value,
+      authority:authority(),
+      insultLevel:insultLevel(),
+      mode:mode(),
+      limits:state.limits
+    };
+  }
+
+  function rememberAI(role,content){
+    state.aiHistory.push({role:role,content:String(content).slice(0,1800)});
+    if(state.aiHistory.length>24)state.aiHistory=state.aiHistory.slice(-24);
+  }
+
+  function collectRecentOrders(){
+    return state.recentMissions.slice(-20);
+  }
+
+  async function callRealAI(message, opts){
+    if(state.aiBusy)return false;
+    state.aiBusy=true;
+    var sendBtn=document.querySelector("#composer button[type='submit']");
+    if(sendBtn){sendBtn.disabled=true;sendBtn.textContent="…";}
+    try{
+      var response=await fetch(AI_ENDPOINT,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          message:message,
+          history:state.aiHistory,
+          settings:settingsForAI(),
+          recentOrders:collectRecentOrders()
+        })
+      });
+      var data=await response.json().catch(function(){return {}});
+      if(!response.ok||!data.reply)throw new Error(data.error||("HTTP "+response.status));
+      var reply=String(data.reply).trim();
+      add(reply,"ai");
+      rememberAI("user",message);
+      rememberAI("assistant",reply);
+      // Keep model outputs in anti-repetition memory too.
+      state.recentReplies.push(reply);
+      if(state.recentReplies.length>10)state.recentReplies.shift();
+      return true;
+    }catch(err){
+      console.warn("Real AI unavailable, local fallback:",err);
+      return false;
+    }finally{
+      state.aiBusy=false;
+      if(sendBtn){sendBtn.disabled=false;sendBtn.textContent="Envoyer";}
+    }
+  }
+
+  async function submitToDominant(message){
+    var lower=message.toLowerCase().trim();
+    var safe=($("safe").value||"ROUGE").toLowerCase().trim();
+    if((safe&&lower.indexOf(safe)>=0)||/\b(stop|arrête|arrete|pause)\b/.test(lower)){
+      stopSession();return;
+    }
+    var ok=await callRealAI(message);
+    if(!ok)aiReply(message);
+  }
+
   function aiReply(input){
     state.turn+=1;
     var lower=input.toLowerCase().trim();
@@ -447,7 +514,7 @@
   });
   $("start").addEventListener("click",function(){
     var name=$("domName").value.trim()||"Madame Nova";
-    state.recentReplies=[];state.turn=0;state.completed=0;state.lastMission="";state.missionCount=0;state.lastMissionType="";state.recentMissions=[];state.missionOpen=false;
+    state.recentReplies=[];state.turn=0;state.completed=0;state.lastMission="";state.missionCount=0;state.lastMissionType="";state.recentMissions=[];state.missionOpen=false;state.aiHistory=[];state.aiBusy=false;
     $("showName").textContent=name;
     $("showStyle").textContent=$("style").value+" • Autorité "+$("authority").value+"/10";
     $("modeLabel").textContent=mode()==="bdsm"?"BDSM":(mode()==="soft"?"Non sexuel":"Suggestif");
@@ -457,9 +524,9 @@
     }
     $("messages").innerHTML="";show("game");
     add(domPrefix()+"Session ouverte. Présence immersive active : je privilégie des ordres concrets à exécuter dans la pièce, presque jamais de simple attente. Chaque consigne reste active jusqu’à exécution, refus ou safeword.","ai");
-    setTimeout(newMission,400);
+    setTimeout(async function(){var ok=await callRealAI("Commence maintenant la session. Donne-moi un premier ordre concret, immédiatement réalisable dans la pièce, sans simple attente et sans répéter une formule générique.");if(!ok)newMission();},400);
   });
-  $("mission").addEventListener("click",newMission);
+  $("mission").addEventListener("click",async function(){var ok=await callRealAI("Donne-moi un nouvel ordre concret et différent de tous les précédents. Fais-moi réellement faire quelque chose dans la pièce, sans simple attente.");if(!ok)newMission();});
   $("reward").addEventListener("click",function(){
     award(10);
     add(domPrefix()+pick([
@@ -471,9 +538,9 @@
   $("stop").addEventListener("click",stopSession);
   $("composer").addEventListener("submit",function(e){
     e.preventDefault();
-    var v=$("text").value.trim();if(!v)return;
+    var v=$("text").value.trim();if(!v||state.aiBusy)return;
     add(v,"me");$("text").value="";
-    setTimeout(function(){aiReply(v)},260)
+    submitToDominant(v);
   });
   $("resetTop").addEventListener("click",function(){
     if(confirm("Réinitialiser la session ?")){localStorage.removeItem("domina_v1");location.reload()}
